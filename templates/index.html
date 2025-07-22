@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DETECT-IA Analizador de Texto - IA, Parafraseo, Plagio, APA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #E8F0FE; /* Azul muy suave para el fondo */
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        .navbar {
+            height: 60px;
+            background-color: #1976D2; /* Azul profundo para la barra de navegación */
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 1.5em;
+            font-size: 1.3em;
+            font-weight: 600;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 220px;
+            height: calc(100% - 60px);
+            background-color: #1976D2; /* Azul profundo para la barra lateral (consistente con navbar) */
+            color: white;
+            padding-top: 1.5em;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: #ecf0f1;
+            padding: 1em 1.8em;
+            text-decoration: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: 1.05em;
+        }
+
+        .sidebar a:hover {
+            background-color: #2196F3; /* Azul más vibrante al pasar el ratón en sidebar */
+            color: #fff;
+        }
+
+        .sidebar i {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            padding: 90px 3em 3em;
+            width: calc(100% - 220px);
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+
+        .container {
+            display: flex;
+            gap: 2.5em;
+            height: 100%;
+        }
+
+        .herramientas, .resultados {
+            flex: 1;
+            background-color: #FFFFFF; /* Fondo blanco puro para las tarjetas */
+            padding: 2.5em;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); /* Sombra más pronunciada para efecto flotante */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e0e0e0; /* Borde sutil */
+            min-height: 400px;
+            height: 100%;
+            position: relative;
+        }
+
+        h2 {
+            margin-bottom: 1.5em;
+            color: #2c3e50;
+            font-size: 1.8em;
+            font-weight: 700;
+            border-bottom: 2px solid #eef2f7;
+            padding-bottom: 0.5em;
+        }
+
+        label {
+            margin-bottom: 0.8em;
+            display: block;
+            font-weight: 600;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1em;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0; /* Borde más suave */
+            font-size: 1.05em;
+            resize: vertical;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.2s ease;
+        }
+
+        textarea:focus {
+            border-color: #2196F3; /* Azul vibrante al enfocar */
+            outline: none;
+        }
+
+        .botones {
+            margin-top: 2em;
+            display: flex;
+            gap: 0.8em;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .botones button {
+            background-color: #2196F3; /* Azul vibrante primario */
+            color: white;
+            padding: 0.8em 1.6em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            flex: 1 1 auto;
+            font-size: 1em;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
+        }
+
+        .botones button:hover {
+            background-color: #1565C0; /* Tono de azul más oscuro al pasar el ratón */
+            transform: translateY(-2px);
+        }
+
+        /* Estilo específico para el botón de Parafrasear */
+        .botones button[name="opcion"][value="paraphrase"] {
+            background-color: #34A853; /* Verde distintivo para Parafrasear (mantener) */
+        }
+
+        .botones button[name="opcion"][value="paraphrase"]:hover {
+            background-color: #2C8C46;
+            transform: translateY(-2px);
+        }
+
+        .botones button i {
+            margin-right: 8px;
+        }
+
+        .resultado {
+            background-color: #fdfdfd; /* Fondo casi blanco para los resultados */
+            padding: 1.5em;
+            border-radius: 8px;
+            /* white-space: pre-wrap; */ /* Eliminado para evitar sangría indeseada en <p> */
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin-bottom: 1.5em;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .resultado strong {
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 0.5em;
+            display: block;
+        }
+
+        .resaltado-ia {
+            background-color: #FFEBEE; /* Rojo muy suave para IA (complementa naranja de barra) */
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .resaltado-plagio {
+            background-color: #FFFDE0; /* Amarillo muy suave para plagio */
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .resaltado-apa-bien {
+            background-color: #C8E6C9; /* Verde muy suave para APA bien (complementa verde de botón) */
+            color: #333; /* Texto oscuro para mejor contraste */
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .resaltado-apa-sospechosa {
+            background-color: #FFD700; /* Amarillo dorado para APA sospechosa */
+            color: #333;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        /* Estilos para el spinner de carga */
+        .spinner-container {
+            display: flex; /* Usar flexbox para centrar contenido */
+            flex-direction: column; /* Organizar los elementos en columna */
+            justify-content: center; /* Centrar verticalmente */
+            align-items: center; /* Centrar horizontalmente */
+            height: 100%; /* Asegurar que ocupe toda la altura disponible */
+            width: 100%; /* Asegurar que ocupe todo el ancho disponible */
+            position: absolute; /* Posicionamiento absoluto */
+            top: 0; /* Cubrir desde la parte superior */
+            left: 0; /* Cubrir desde la parte izquierda */
+            background-color: rgba(255, 255, 255, 0.95); /* Fondo blanco semi-transparente para cubrir contenido */
+            z-index: 10; /* Asegurar que esté por encima de otros contenidos */
+            border-radius: 12px; /* Coincidir con el border-radius del contenedor principal */
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #2196F3; /* Color del spinner: Azul vibrante */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto; /* Centrar y añadir margen inferior */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para la gráfica de IA */
+        .ia-chart-container {
+            margin-top: 2em;
+            padding-top: 1.5em;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chart-area {
+            display: flex;
+            align-items: flex-end; /* Alinea las barras a la parte inferior */
+            height: 150px; /* Altura del área de la gráfica */
+            width: 200px; /* Ancho total de la gráfica */
+            border-bottom: 2px solid #ccc; /* Línea base */
+            margin-bottom: 1em;
+            position: relative;
+        }
+
+        .chart-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 50%; /* Cada columna ocupa la mitad del ancho */
+            height: 100%; /* Ocupa la altura del chart-area */
+            justify-content: flex-end; /* Empuja las barras hacia abajo */
+            position: relative;
+            padding: 0 10px; /* Espacio entre el borde y la barra */
+        }
+
+        .bar-value {
+            width: 60px; /* Ancho de la barra */
+            background-color: #FF5722; /* Naranja vibrante para IA */
+            transition: height 0.5s ease-out; /* Animación de altura */
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            position: absolute; /* Posiciona respecto al chart-column */
+            bottom: 0;
+        }
+
+        .chart-column:last-child .bar-value {
+            background-color: #E0E0E0; /* Gris muy claro para Humano */
+        }
+
+        .bar-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 0.5em; /* Espacio debajo de las barras */
+            position: absolute;
+            bottom: -1.5em; /* Posiciona debajo de la línea base */
+            width: 100%;
+            text-align: center;
+        }
+
+
+        .chart-legend {
+            margin-top: 2em;
+            width: 100%;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8em;
+            font-size: 1em;
+            color: #444;
+        }
+
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .legend-dot.orange {
+            background-color: #FF5722; /* Naranja vibrante para IA */
+        }
+
+        .legend-dot.light-gray {
+            background-color: #E0E0E0; /* Gris muy claro de humano */
+            border: 1px solid #ccc; /* Borde para el blanco */
+        }
+
+        .legend-item .percentage {
+            margin-left: auto; /* Empuja el porcentaje a la derecha */
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <i class="bi bi-file-earmark-text"></i> DETECT-IA Analizador Inteligente de Texto
+    </div>
+
+    <div class="sidebar">
+        <a href="#"><i class="bi bi-house-door"></i> Inicio</a>
+        <a href="#"><i class="bi bi-sliders"></i> Parámetros</a>
+        <a href="#"><i class="bi bi-clock-history"></i> Historial</a>
+        <a href="#"><i class="bi bi-gear"></i> Configuración</a>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <!-- Sección de herramientas -->
+            <div class="herramientas">
+                <h2>Herramientas de Análisis</h2>
+                <p style="margin-bottom: 2em; color: #666; line-height: 1.6;">
+                    Bienvenido al Analizador Inteligente de Texto DETECT-IA. Utiliza las herramientas a continuación para evaluar y mejorar tus documentos. Puedes detectar texto generado por IA, parafrasear, verificar plagio o analizar citas en formato APA. Introduce tu texto y selecciona una opción para comenzar.
+                </p>
+                <form method="post">
+                    <label for="texto">Introduce tu texto:</label><br>
+                    <textarea name="texto" id="texto" required>{{ texto }}</textarea>
+                    <div class="botones">
+                        <button type="submit" name="opcion" value="ia"><i class="bi bi-cpu"></i> Detectar IA</button>
+                        <button type="submit" name="opcion" value="paraphrase"><i class="bi bi-arrow-repeat"></i> Parafrasear</button>
+                        <button type="submit" name="opcion" value="plagiarism"><i class="bi bi-search"></i> Detectar Plagio</button>
+                        <button type="submit" name="opcion" value="apa"><i class="bi bi-book"></i> Verificar Citas APA</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sección de resultados -->
+            <div class="resultados">
+                <div id="loading-spinner" class="spinner-container" style="display: none;">
+                    <div class="spinner"></div>
+                    <p style="font-size: 1.1em; color: #555;">Analizando tu texto...<br>
+                        Espere un poco, el modelo tarda en ejecutarse.</p>
+                </div>
+
+                <!-- Contenedor para resultados de Detección de IA con gráfica -->
+                <div id="ia-detection-results" style="display: none;">
+                    <div class="resultado">
+                        <strong>Resultado:</strong><br>
+                        <!-- Las predicciones de IA se insertarán aquí -->
+                        <div id="ia-predictions-output"></div>
+                        <!-- El resumen de IA se insertará aquí -->
+                        <div id="ia-summary-output" style="margin-top: 1em;"></div>
+                    </div>
+                    <div class="ia-chart-container">
+                        <div class="chart-area">
+                            <div class="chart-column">
+                                <div class="bar-value" id="ia-bar-value" style="height: 0%;"></div>
+                                <div class="bar-label">IA</div>
+                            </div>
+                            <div class="chart-column">
+                                <div class="bar-value" id="human-bar-value" style="height: 0%;"></div>
+                                <div class="bar-label">Humano</div>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot orange"></span> Generado por IA <i class="bi bi-info-circle" title="Indica el porcentaje de texto que el modelo considera generado por IA."></i>
+                                <span class="percentage" id="ia-percentage-text">0%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot light-gray"></span> Escrito por personas <i class="bi bi-info-circle" title="Indica el porcentaje de texto que el modelo considera escrito por personas."></i>
+                                <span class="percentage" id="human-percentage-text">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloque de resultados genérico (para otros análisis como parafraseo, plagio, APA) -->
+                {% if resultado %}
+                    <div class="resultado" id="generic-resultado-block">
+                        <strong>Resultado:</strong><br>
+                        {{ resultado|safe }}
+                    </div>
+                {% endif %}
+
+                <!-- Bloque para oraciones resaltadas (puede coexistir con otros resultados) -->
+                {% if oraciones_resaltadas %}
+                    <div class="resultado" id="highlighted-sentences-block">
+                        <strong>Texto Resaltado:</strong><br>
+                        {% for o in oraciones_resaltadas %}
+                            <p class="{{ o.clase }}">{{ o.texto }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const genericResultsBlock = document.getElementById('generic-resultado-block');
+            const highlightedSentencesBlock = document.getElementById('highlighted-sentences-block');
+            const iaDetectionResults = document.getElementById('ia-detection-results');
+            // Nuevas referencias para los elementos de salida de IA
+            const iaPredictionsOutput = document.getElementById('ia-predictions-output');
+            const iaSummaryOutput = document.getElementById('ia-summary-output');
+
+            const iaBarValue = document.getElementById('ia-bar-value');
+            const humanBarValue = document.getElementById('human-bar-value');
+            const iaPercentageText = document.getElementById('ia-percentage-text');
+            const humanPercentageText = document.getElementById('human-percentage-text');
+            const textarea = document.getElementById('texto');
+
+            // Variable pasada desde Flask para saber si es una carga POST o GET
+            const requestMethod = "{{ request_method }}";
+            // Variables pasadas desde Flask para resultados de IA
+            const flaskIaPredictionsHtml = `{{ ia_predictions_html | safe }}`.trim();
+            const flaskIaSummaryHtml = `{{ ia_summary_html | safe }}`.trim();
+            const flaskIaPercentage = parseFloat("{{ ia_percentage }}");
+            const flaskOpcion = "{{ opcion }}"; // La opción que fue seleccionada
+
+            // Función para ocultar todos los bloques de resultados
+            function hideAllResultBlocks() {
+                if (genericResultsBlock) genericResultsBlock.style.display = 'none';
+                if (highlightedSentencesBlock) highlightedSentencesBlock.style.display = 'none';
+                if (iaDetectionResults) iaDetectionResults.style.display = 'none';
+            }
+
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    const clickedButton = event.submitter;
+
+                    if (clickedButton && clickedButton.name === 'opcion') {
+                        hideAllResultBlocks(); // Ocultar resultados anteriores
+                        loadingSpinner.style.display = 'flex'; // Mostrar spinner de carga
+                    }
+                });
+            }
+
+            // Lógica para mostrar los resultados después de la carga de la página (respuesta del servidor)
+            // Se ejecuta si hay una variable `resultado` o `oraciones_resaltadas` de Flask
+            // Ya no necesitamos initialResultContent para IA, usamos las variables directas de Flask
+
+            // Ocultar spinner si la página es una carga inicial GET y no hay resultados previos
+            if (requestMethod === 'GET') {
+                loadingSpinner.style.display = 'none';
+            }
+
+            // Mostrar los resultados correctos basados en la opción y el contenido
+            if (flaskOpcion === 'ia' && (flaskIaPredictionsHtml || flaskIaSummaryHtml)) {
+                loadingSpinner.style.display = 'none'; // Ocultar spinner
+                hideAllResultBlocks(); // Asegurar que todo esté oculto primero
+
+                // Insertar el HTML de predicciones y resumen
+                iaPredictionsOutput.innerHTML = flaskIaPredictionsHtml;
+                iaSummaryOutput.innerHTML = flaskIaSummaryHtml;
+
+                // Actualizar la gráfica de IA
+                const iaPercentage = flaskIaPercentage;
+                const humanPercentage = 100 - iaPercentage;
+
+                iaBarValue.style.height = `${iaPercentage}%`;
+                humanBarValue.style.height = `${humanPercentage}%`;
+
+                iaPercentageText.textContent = `${iaPercentage}%`;
+                humanPercentageText.textContent = `${humanPercentage}%`;
+
+                iaDetectionResults.style.display = 'block'; // Mostrar el bloque de resultados de IA
+            } else if (genericResultsBlock && genericResultsBlock.innerHTML.trim() !== '') {
+                // Si hay un resultado genérico (parafraseo, plagio, apa) o texto resaltado
+                loadingSpinner.style.display = 'none';
+                hideAllResultBlocks(); // Ocultar todo primero
+                genericResultsBlock.style.display = 'block'; // Mostrar resultado genérico
+                // Si también hay oraciones resaltadas, mostrarlas
+                if (highlightedSentencesBlock && highlightedSentencesBlock.innerHTML.trim() !== '') {
+                    highlightedSentencesBlock.style.display = 'block';
+                }
+            } else if (highlightedSentencesBlock && highlightedSentencesBlock.innerHTML.trim() !== '') {
+                 // Si solo hay oraciones resaltadas (ej. en una carga inicial sin resultado genérico)
+                loadingSpinner.style.display = 'none';
+                hideAllResultBlocks(); // Ocultar todo primero
+                highlightedSentencesBlock.style.display = 'block';
+            } else {
+                // Si no hay resultados iniciales en la carga de la página, asegurar que el spinner esté oculto
+                loadingSpinner.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>
